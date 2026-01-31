@@ -19,250 +19,217 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-green-50 min-h-screen text-slate-800 flex flex-col justify-center">
+<body class="bg-slate-50 text-slate-800">
+
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useCallback } = React;
+        const { useState, useEffect } = React;
 
-        // --- SECURITY CONFIGURATION ---
-        // แก้ไขค่า ITERATIONS เป็น 5000 ตามที่ต้องการแล้ว
-        const APP_CONFIG = {
-            SALT: "NongKhaem_Election_Secure_Salt_2026_#$!@", 
-            ITERATIONS: 5000, 
-            KEY_SIZE: 256 / 32
-        };
-
-        const generateSecureHash = (text) => {
-            return CryptoJS.PBKDF2(text, APP_CONFIG.SALT, {
-                keySize: APP_CONFIG.KEY_SIZE,
-                iterations: APP_CONFIG.ITERATIONS
-            }).toString();
-        };
-
-        // Icons
-        const IconShieldCheck = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>;
-        const IconSearch = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
-        const IconAlertCircle = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
-        const IconCheckCircle = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
-        const IconDatabase = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>;
-        const IconRefresh = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>;
+        // --- ข้อมูลเริ่มต้น (สำหรับ Demo หรือกรณี GitHub Pages) ---
+        // เมื่อใช้งานจริง ให้ Copy JSON จากหน้า Admin มาวางทับตรงนี้
+        const INITIAL_DATA = [
+            // ข้อมูลตัวอย่าง (ถ้าไม่มีไฟล์ data.json ระบบจะใช้ data นี้แทน)
+             { "hash_id": "7084f6c8d9cb3fd0dc42fee78e848faf3b962fc9f53676dece562532b30e7737", "enc_name": "U2FsdGVkX19Ey0DPO/UTFv3GI9APWOVWtMMJGLZqYD3v/L/4n0oZbMOIfRbnOmyOaDMJunT/sbA+N239KjTk8g==", "set_no": "23", "province": "จังหวัดกระบี่ / เขต 1", "seq_no": "1" },
+             { "hash_id": "example_hash_for_district", "enc_name": "example_enc_name", "set_no": "ในเขต", "province": "กรุงเทพมหานคร", "seq_no": "99" }
+        ];
 
         function App() {
-            const [database, setDatabase] = useState([]);
-            const [isDbLoaded, setIsDbLoaded] = useState(false);
-            const [dbError, setDbError] = useState('');
-            const [imgError, setImgError] = useState(false);
-            const [isLoadingDb, setIsLoadingDb] = useState(true);
-
-            // ฟังก์ชันโหลดข้อมูล แยกออกมาเพื่อให้กด Retry ได้
-            const loadDatabase = useCallback(() => {
-                setIsLoadingDb(true);
-                setDbError('');
-                
-                // ใส่ Timestamp เพื่อป้องกัน Browser Cache ไฟล์เก่า
-                fetch(`data.json?t=${new Date().getTime()}`)
-                    .then(response => {
-                        if (!response.ok) throw new Error('Network response was not ok');
-                        return response.json();
-                    })
-                    .then(data => {
-                        setDatabase(data);
-                        setIsDbLoaded(true);
-                        setIsLoadingDb(false);
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        setDbError('โหลดฐานข้อมูลไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต');
-                        setIsLoadingDb(false);
-                    });
-            }, []);
-
-            useEffect(() => {
-                loadDatabase();
-            }, [loadDatabase]);
-
-            return (
-                <div className="max-w-xl mx-auto p-4 w-full">
-                    {/* Header */}
-                    <div className="text-center mb-8">
-                        
-                        <div className="flex justify-center mb-4">
-                            {!imgError ? (
-                                <img 
-                                    src="image.png" 
-                                    alt="ตรากรุงเทพมหานคร" 
-                                    className="h-28 w-auto object-contain drop-shadow-lg hover:scale-105 transition-transform duration-300"
-                                    onError={() => setImgError(true)} 
-                                />
-                            ) : (
-                                <div className="inline-flex items-center justify-center w-20 h-20 bg-green-600 rounded-full shadow-xl text-white">
-                                    <IconShieldCheck />
-                                </div>
-                            )}
-                        </div>
-
-                        <h1 className="text-2xl md:text-3xl font-bold text-slate-800">ตรวจสอบรายชื่อ<br/>ผู้มีสิทธิ์เลือกตั้งล่วงหน้า</h1>
-                        <p className="text-green-700 mt-2 font-medium bg-green-100 inline-block px-3 py-1 rounded-full text-sm">
-                            สำนักงานเขตหนองแขม 2026
-                        </p>
-                        
-                        {/* Status Bar */}
-                        <div className="flex justify-center mt-3 h-8 items-center">
-                            {isLoadingDb ? (
-                                <span className="text-slate-400 text-xs animate-pulse flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
-                                    กำลังดาวน์โหลดข้อมูล...
-                                </span>
-                            ) : isDbLoaded ? (
-                                <span className="flex items-center gap-1 text-green-600 text-xs animate-fade-in bg-green-50 px-2 py-1 rounded-lg border border-green-100">
-                                    <IconDatabase /> ฐานข้อมูลพร้อมใช้งาน ({database.length} รายชื่อ)
-                                </span>
-                            ) : (
-                                <button 
-                                    onClick={loadDatabase}
-                                    className="flex items-center gap-1 text-red-500 text-xs animate-fade-in bg-red-50 px-3 py-1 rounded-lg border border-red-100 hover:bg-red-100 transition-colors cursor-pointer"
-                                >
-                                    <IconAlertCircle /> {dbError} <span className="underline ml-1 font-bold flex items-center gap-1"><IconRefresh/> ลองใหม่</span>
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden p-6 md:p-8">
-                        <VoterCheck database={database} isDbLoaded={isDbLoaded} />
-                    </div>
-                </div>
-            );
-        }
-
-        function VoterCheck({ database, isDbLoaded }) {
+            const [data, setData] = useState([]);
             const [idCard, setIdCard] = useState('');
             const [result, setResult] = useState(null);
             const [error, setError] = useState('');
-            const [loading, setLoading] = useState(false);
+            const [loading, setLoading] = useState(true);
 
-            const handleCheck = (e) => {
-                e.preventDefault();
-                setResult(null);
-                setError('');
-                if (!isDbLoaded) { setError('ระบบกำลังโหลดฐานข้อมูล กรุณารอสักครู่...'); return; }
-
-                setLoading(true);
-
-                // Delay เพื่อให้ UI แสดงสถานะ Loading ก่อนเริ่มคำนวณหนัก
-                setTimeout(() => {
+            // โหลดข้อมูล
+            useEffect(() => {
+                const fetchData = async () => {
                     try {
-                        const cleanID = idCard.replace(/[^0-9]/g, '');
-                        if (cleanID.length !== 13) {
-                            setError('กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก');
-                            setLoading(false);
-                            return;
-                        }
-
-                        const searchHash = generateSecureHash(cleanID);
-                        const found = database.find(item => item.hash_id === searchHash);
-
-                        if (found) {
-                            try {
-                                const bytes = CryptoJS.AES.decrypt(found.enc_name, searchHash);
-                                const originalName = bytes.toString(CryptoJS.enc.Utf8);
-                                if (!originalName) throw new Error("Decryption failed");
-                                setResult({ ...found, decoded_name: originalName });
-                            } catch (e) {
-                                setError('ข้อมูลเสียหาย ไม่สามารถแสดงผลได้');
-                            }
-                        } else {
-                            setError('ไม่พบข้อมูลผู้มีสิทธิ์ หรือ เลขบัตรไม่ถูกต้อง');
-                        }
+                        // พยายามโหลดจากไฟล์ data.json ก่อน
+                        const response = await fetch('./data.json');
+                        if (!response.ok) throw new Error("ไม่พบไฟล์ data.json");
+                        const jsonData = await response.json();
+                        setData(jsonData);
                     } catch (err) {
-                        setError('เกิดข้อผิดพลาดในการประมวลผล');
+                        console.log("ใช้ข้อมูล Default เนื่องจาก:", err.message);
+                        setData(INITIAL_DATA);
+                    } finally {
+                        setLoading(false);
                     }
-                    setLoading(false);
-                }, 100);
+                };
+                fetchData();
+            }, []);
+
+            const handleSearch = (e) => {
+                e.preventDefault();
+                setError('');
+                setResult(null);
+
+                // Validation เบื้องต้น
+                const cleanId = idCard.replace(/[^0-9]/g, '');
+                if (cleanId.length !== 13) {
+                    setError('กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก');
+                    return;
+                }
+
+                // 1. Hash เลขบัตรที่กรอก เพื่อไปค้นหาใน Data
+                const hashedId = CryptoJS.SHA256(cleanId).toString();
+
+                // 2. ค้นหาใน Data
+                const found = data.find(item => item.hash_id === hashedId);
+
+                if (found) {
+                    try {
+                        // 3. ถ้าเจอ ให้ถอดรหัสชื่อ (ใช้เลขบัตรเป็น Key)
+                        const bytes = CryptoJS.AES.decrypt(found.enc_name, cleanId);
+                        const originalName = bytes.toString(CryptoJS.enc.Utf8);
+                        
+                        if (!originalName) throw new Error("Decrypt failed");
+
+                        setResult({
+                            ...found,
+                            name: originalName
+                        });
+                    } catch (err) {
+                        setError('เกิดข้อผิดพลาดในการแสดงผลข้อมูล (Key ไม่ถูกต้อง)');
+                    }
+                } else {
+                    setError('ไม่พบข้อมูลรายชื่อนี้ในระบบ หรือ ท่านไม่ได้ลงทะเบียนเลือกตั้งล่วงหน้าไว้');
+                }
+            };
+
+            // ฟังก์ชันสำหรับเลือกรูปภาพแผนที่
+            const getMapImage = (setNo) => {
+                if (setNo === 'ในเขต') {
+                    return './map/24.png';
+                }
+                // กรณีเป็นตัวเลข หรือข้อความอื่นๆ ให้ใช้ชื่อไฟล์ตามชุดที่
+                return `./map/${setNo}.png`;
             };
 
             return (
-                <div className="animate-fade-in">
-                    <form onSubmit={handleCheck} className="space-y-5">
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700 ml-1">เลขประจำตัวประชาชน</label>
-                            <div className="relative">
+                <div className="min-h-screen flex flex-col items-center py-10 px-4 max-w-md mx-auto w-full">
+                    
+                    {/* Header - ใช้โทนสีเขียวเหมือนไฟล์ต้นฉบับ */}
+                    <div className="text-center mb-8">
+                        <div className="inline-block p-3 rounded-full bg-green-100 text-green-600 mb-4 shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h1 className="text-2xl font-bold text-slate-800 mb-2">ตรวจสอบสิทธิ์เลือกตั้ง</h1>
+                        <p className="text-slate-500">เลือกตั้งล่วงหน้า (นอกเขต/ในเขต) - เขตหนองแขม</p>
+                    </div>
+
+                    {/* Search Form - ใช้ปุ่มสีเขียว */}
+                    <div className="w-full bg-white rounded-2xl shadow-lg p-6 mb-6 border border-slate-100">
+                        <form onSubmit={handleSearch} className="flex flex-col gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    เลขบัตรประจำตัวประชาชน
+                                </label>
                                 <input 
                                     type="text" 
                                     value={idCard}
-                                    onChange={(e) => setIdCard(e.target.value)}
-                                    placeholder="ใส่เลขบัตรฯของท่านที่นี่"
-                                    maxLength="13"
-                                    className="w-full pl-4 pr-10 py-3.5 border border-slate-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 outline-none font-mono text-lg transition-all text-slate-700 bg-slate-50 focus:bg-white disabled:bg-slate-100 disabled:text-slate-400"
-                                    disabled={!isDbLoaded}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/[^0-9]/g, '');
+                                        if (val.length <= 13) setIdCard(val);
+                                    }}
+                                    placeholder="เลข 13 หลัก"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/10 outline-none transition text-lg tracking-widest text-center placeholder:tracking-normal placeholder:text-slate-400"
+                                    inputMode="numeric"
                                 />
-                                <div className="absolute right-3 top-4 text-slate-400">
-                                    <IconSearch />
-                                </div>
                             </div>
-                        </div>
-                        
-                        <button 
-                            type="submit" 
-                            disabled={loading || !isDbLoaded}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none active:scale-[0.98] flex justify-center items-center gap-2"
-                        >
-                            {loading ? (
-                                <>
-                                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                    กำลังตรวจสอบ...
-                                </>
-                            ) : 'ตรวจสอบสิทธิ์'}
-                        </button>
-                    </form>
+                            
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? 'กำลังโหลดข้อมูล...' : 'ตรวจสอบสิทธิ์'}
+                            </button>
+                        </form>
+                    </div>
 
-                    <div className="mt-8 min-h-[120px]">
+                    {/* Result Display */}
+                    <div className="w-full">
                         {error && (
-                            <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 animate-fade-in text-red-800">
-                                <div className="shrink-0 mt-0.5"><IconAlertCircle /></div>
-                                <span className="text-sm font-medium">{error}</span>
+                            <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-center animate-fade-in flex flex-col items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <span>{error}</span>
                             </div>
                         )}
 
-                        {result && (
-                            <div className="bg-green-50 border border-green-200 rounded-xl p-6 animate-fade-in relative overflow-hidden">
-                                <div className="absolute -top-6 -right-6 opacity-10 text-green-800">
-                                    <svg width="120" height="120" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        {!error && result && (
+                            <div className="bg-green-50 rounded-xl p-6 border border-green-100 animate-fade-in shadow-sm">
+                                <div className="flex items-center gap-3 mb-4 border-b border-green-200 pb-4">
+                                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-green-800 text-lg">พบข้อมูลของคุณ</h3>
+                                        <p className="text-green-700 font-medium text-base">{result.name}</p>
+                                    </div>
                                 </div>
-                                
-                                <div className="flex items-center gap-2 mb-4 border-b border-green-200 pb-3 relative z-10">
-                                    <div className="text-green-600"><IconCheckCircle /></div>
-                                    <h3 className="text-lg font-bold text-green-800">มีรายชื่อผู้มีสิทธิ์</h3>
-                                </div>
-                                
-                                <div className="grid gap-3 relative z-10">
-                                    <ResultRow label="ชื่อ-นามสกุล" value={result.decoded_name} highlight />
+
+                                <div className="space-y-4">
                                     <ResultRow label="เลขบัตรฯ" value={`${idCard.substring(0,3)}-xxx-xxxxx-xx`} />
                                     <div className="grid grid-cols-2 gap-4">
-                                        <ResultRow label="ชุดที่" value={result.set_no} />
-                                        <ResultRow label="ลำดับที่" value={result.seq_no} />
+                                        <ResultRow label="ชุดที่" value={result.set_no} highlight />
+                                        <ResultRow label="ลำดับที่" value={result.seq_no} highlight />
                                     </div>
                                     <ResultRow label="หน่วยงาน/เขต" value={result.province} />
+                                    
+                                    {/* --- ส่วนแสดงแผนที่ (เพิ่มใหม่ ตามตำแหน่งที่ต้องการ) --- */}
+                                    <div className="mt-4 pt-4 border-t border-green-200/50">
+                                        <div className="flex items-center gap-2 mb-2 text-green-800">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                            </svg>
+                                            <span className="font-semibold text-sm">แผนที่จุดเลือกตั้ง</span>
+                                        </div>
+                                        <div className="rounded-lg overflow-hidden border border-slate-200 bg-white shadow-sm">
+                                            <img 
+                                                src={getMapImage(result.set_no)} 
+                                                alt={`แผนที่สำหรับชุดที่ ${result.set_no}`}
+                                                className="w-full h-auto object-contain min-h-[150px] bg-slate-50"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none'; // ซ่อนรูปถ้าไม่เจอไฟล์
+                                                    e.target.parentNode.innerHTML += '<div class="p-4 text-center text-slate-400 text-sm">ไม่พบแผนที่สำหรับชุดนี้</div>';
+                                                    e.target.parentNode.querySelector('img').remove();
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    {/* ----------------------------- */}
+
                                 </div>
                             </div>
                         )}
                         
                         {!error && !result && (
-                            <div className="text-center text-slate-300 text-sm py-4">
-                                ผลการตรวจสอบจะแสดงที่นี่
+                            <div className="text-center text-slate-300 text-sm py-8">
+                                <p>ผลการตรวจสอบจะแสดงที่นี่</p>
                             </div>
                         )}
                     </div>
+
+                    <footer className="mt-12 text-center text-slate-400 text-xs">
+                        <p>© สำนักงานเขตหนองแขม - ระบบตรวจสอบสิทธิ์ (Secure & Offline-First)</p>
+                    </footer>
                 </div>
             );
         }
 
+        // ResultRow คง UI เดิม (ใช้สีเขียวสำหรับ Highlight)
         function ResultRow({ label, value, highlight }) {
             return (
                 <div>
-                    <p className="text-xs text-slate-500 mb-0.5">{label}</p>
+                    <p className="text-xs text-slate-500 mb-1">{label}</p>
                     <p className={`font-semibold text-lg ${highlight ? 'text-green-700' : 'text-slate-800'}`}>{value}</p>
                 </div>
             );
