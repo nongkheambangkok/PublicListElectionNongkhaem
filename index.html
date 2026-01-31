@@ -29,7 +29,7 @@
         // ค่าเหล่านี้จำเป็นต้องมีเพื่อใช้ถอดรหัส (แม้จะแยกไฟล์ Admin ไปแล้วก็ตาม)
         const APP_CONFIG = {
             SALT: "NongKhaem_Election_Secure_Salt_2026_#$!@", 
-            ITERATIONS: 3000, 
+            ITERATIONS: 10000, 
             KEY_SIZE: 256 / 32
         };
 
@@ -51,6 +51,7 @@
             const [database, setDatabase] = useState([]);
             const [isDbLoaded, setIsDbLoaded] = useState(false);
             const [dbError, setDbError] = useState('');
+            const [imgError, setImgError] = useState(false); // State สำหรับเช็คว่ารูปโหลดได้ไหม
 
             useEffect(() => {
                 // โหลดไฟล์ JSON ที่สร้างจาก admin_tool.html
@@ -73,9 +74,23 @@
                 <div className="max-w-xl mx-auto p-4 w-full">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-600 rounded-full mb-4 shadow-xl text-white">
-                            <IconShieldCheck />
+                        
+                        {/* ส่วนแสดงโลโก้ หรือ ไอคอน */}
+                        <div className="flex justify-center mb-4">
+                            {!imgError ? (
+                                <img 
+                                    src="image.png" 
+                                    alt="ตรากรุงเทพมหานคร" 
+                                    className="h-28 w-auto object-contain drop-shadow-lg hover:scale-105 transition-transform duration-300"
+                                    onError={() => setImgError(true)} // ถ้ารูปเสีย ให้สลับไปใช้ไอคอนแทน
+                                />
+                            ) : (
+                                <div className="inline-flex items-center justify-center w-20 h-20 bg-green-600 rounded-full shadow-xl text-white">
+                                    <IconShieldCheck />
+                                </div>
+                            )}
                         </div>
+
                         <h1 className="text-2xl md:text-3xl font-bold text-slate-800">ตรวจสอบรายชื่อ<br/>ผู้มีสิทธิ์เลือกตั้งล่วงหน้า</h1>
                         <p className="text-green-700 mt-2 font-medium bg-green-100 inline-block px-3 py-1 rounded-full text-sm">
                             สำนักงานเขตหนองแขม 2026
