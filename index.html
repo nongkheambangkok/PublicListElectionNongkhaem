@@ -26,7 +26,6 @@
         const { useState, useEffect, useCallback } = React;
 
         // --- SECURITY CONFIGURATION ---
-        // แก้ไขค่า ITERATIONS เป็น 5000 ตามที่ต้องการแล้ว
         const APP_CONFIG = {
             SALT: "NongKhaem_Election_Secure_Salt_2026_#$!@", 
             ITERATIONS: 5000, 
@@ -47,6 +46,7 @@
         const IconCheckCircle = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
         const IconDatabase = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>;
         const IconRefresh = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>;
+        const IconMap = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>;
 
         function App() {
             const [database, setDatabase] = useState([]);
@@ -55,12 +55,10 @@
             const [imgError, setImgError] = useState(false);
             const [isLoadingDb, setIsLoadingDb] = useState(true);
 
-            // ฟังก์ชันโหลดข้อมูล แยกออกมาเพื่อให้กด Retry ได้
             const loadDatabase = useCallback(() => {
                 setIsLoadingDb(true);
                 setDbError('');
                 
-                // ใส่ Timestamp เพื่อป้องกัน Browser Cache ไฟล์เก่า
                 fetch(`data.json?t=${new Date().getTime()}`)
                     .then(response => {
                         if (!response.ok) throw new Error('Network response was not ok');
@@ -151,7 +149,6 @@
 
                 setLoading(true);
 
-                // Delay เพื่อให้ UI แสดงสถานะ Loading ก่อนเริ่มคำนวณหนัก
                 setTimeout(() => {
                     try {
                         const cleanID = idCard.replace(/[^0-9]/g, '');
@@ -181,6 +178,20 @@
                     }
                     setLoading(false);
                 }, 100);
+            };
+
+            // ฟังก์ชันเลือกรูปแผนที่
+            const getMapSrc = (setNo) => {
+                if (!setNo) return null;
+                const setStr = String(setNo).trim();
+                
+                // กรณีเป็น "ในเขต" ให้ใช้รูป 24.png
+                if (setStr === "ในเขต" || setStr.includes("ในเขต")) {
+                    return "map/24.png";
+                }
+                
+                // กรณีปกติ ใช้รูปตามเลขชุด (เช่น 1.png)
+                return `map/${setStr}.png`;
             };
 
             return (
@@ -245,6 +256,24 @@
                                         <ResultRow label="ลำดับที่" value={result.seq_no} />
                                     </div>
                                     <ResultRow label="หน่วยงาน/เขต" value={result.province} />
+                                </div>
+
+                                {/* Map Section */}
+                                <div className="mt-6 pt-4 border-t border-green-200/60 relative z-10">
+                                    <h4 className="text-sm font-bold text-green-800 mb-3 flex items-center gap-2">
+                                        <IconMap /> แผนที่หน่วยเลือกตั้ง
+                                    </h4>
+                                    <div className="bg-white p-2 rounded-lg border border-green-100 shadow-sm min-h-[150px] flex items-center justify-center">
+                                        <img 
+                                            src={getMapSrc(result.set_no)} 
+                                            alt={`แผนที่ชุดที่ ${result.set_no}`}
+                                            className="w-full h-auto rounded object-contain max-h-[400px]"
+                                            onError={(e) => {
+                                                e.target.onerror = null; 
+                                                e.target.parentElement.innerHTML = '<div class="text-center py-4"><p class="text-sm text-slate-400">ไม่พบรูปแผนที่</p><p class="text-xs text-slate-300 mt-1">(ตรวจสอบไฟล์ในโฟลเดอร์ map)</p></div>';
+                                            }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}
