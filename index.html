@@ -180,18 +180,18 @@
                 }, 100);
             };
 
-            // ฟังก์ชันเลือกรูปแผนที่
+            // ฟังก์ชันเลือกรูปแผนที่ - แก้ไขให้ path ชัดเจนขึ้น
             const getMapSrc = (setNo) => {
                 if (!setNo) return null;
                 const setStr = String(setNo).trim();
                 
                 // กรณีเป็น "ในเขต" ให้ใช้รูป 24.png
                 if (setStr === "ในเขต" || setStr.includes("ในเขต")) {
-                    return "map/24.png";
+                    return "./Map_Election/24.png"; // เปลี่ยนชื่อ Folder เป็น Map_Election
                 }
                 
                 // กรณีปกติ ใช้รูปตามเลขชุด (เช่น 1.png)
-                return `map/${setStr}.png`;
+                return `./Map_Election/${setStr}.png`; // เปลี่ยนชื่อ Folder เป็น Map_Election
             };
 
             return (
@@ -270,7 +270,8 @@
                                             className="w-full h-auto rounded object-contain max-h-[400px]"
                                             onError={(e) => {
                                                 e.target.onerror = null; 
-                                                e.target.parentElement.innerHTML = '<div class="text-center py-4"><p class="text-sm text-slate-400">ไม่พบรูปแผนที่</p><p class="text-xs text-slate-300 mt-1">(ตรวจสอบไฟล์ในโฟลเดอร์ map)</p></div>';
+                                                // แสดงข้อความ error ที่ชัดเจนขึ้น และบอก path ที่พยายามโหลด
+                                                e.target.parentElement.innerHTML = `<div class="text-center py-4"><p class="text-sm text-red-400">ไม่พบรูปแผนที่: ${getMapSrc(result.set_no)}</p><p class="text-xs text-slate-300 mt-1">(ตรวจสอบชื่อไฟล์ในโฟลเดอร์ Map_Election)</p></div>`;
                                             }}
                                         />
                                     </div>
