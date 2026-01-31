@@ -3,35 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ตรวจสอบรายชื่อผู้มีสิทธิ์เลือกตั้งล่วงหน้า</title>
+    <title>ตรวจสอบรายชื่อผู้มีสิทธิ์เลือกตั้งล่วงหน้า - เขตหนองแขม</title>
     
-    <!-- React & ReactDOM (Ver 18) -->
+    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Crypto JS for Hashing/Encryption -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Sarabun', sans-serif; }
-        
-        /* Animation */
         .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800">
+<body class="bg-green-50 min-h-screen text-slate-800">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
+
+        // --- SECURITY CONFIGURATION (High Security: PBKDF2) ---
+        const APP_CONFIG = {
+            SALT: "NongKhaem_Election_Secure_Salt_2026_#$!@", 
+            ITERATIONS: 3000, 
+            KEY_SIZE: 256 / 32
+        };
+
+        const generateSecureHash = (text) => {
+            return CryptoJS.PBKDF2(text, APP_CONFIG.SALT, {
+                keySize: APP_CONFIG.KEY_SIZE,
+                iterations: APP_CONFIG.ITERATIONS
+            }).toString();
+        };
 
         // --- ICON COMPONENTS ---
         const IconShieldCheck = ({ size = 24, className = "" }) => (
@@ -65,20 +71,16 @@
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
         );
 
-
         function App() {
             const [activeTab, setActiveTab] = useState('check');
             const [database, setDatabase] = useState([]);
             const [isDbLoaded, setIsDbLoaded] = useState(false);
             const [dbError, setDbError] = useState('');
 
-            // โหลดข้อมูลจากไฟล์ external data.json
             useEffect(() => {
                 fetch('data.json')
                     .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
+                        if (!response.ok) throw new Error('Network response was not ok');
                         return response.json();
                     })
                     .then(data => {
@@ -86,8 +88,8 @@
                         setIsDbLoaded(true);
                     })
                     .catch(error => {
-                        console.error('Error loading data.json:', error);
-                        setDbError('ไม่สามารถโหลดไฟล์ข้อมูล (data.json) ได้');
+                        console.error('Error:', error);
+                        setDbError('ไม่พบไฟล์ data.json หรือเกิดข้อผิดพลาดในการโหลด');
                     });
             }, []);
 
@@ -95,52 +97,47 @@
                 <div className="max-w-3xl mx-auto p-4 md:p-8">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4 shadow-lg text-white">
+                        {/* เปลี่ยนสีวงกลมโลโก้เป็นสีเขียว กทม. */}
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full mb-4 shadow-lg text-white">
                             <IconShieldCheck size={32} />
                         </div>
                         <h1 className="text-2xl md:text-3xl font-bold text-slate-800">ตรวจสอบรายชื่อผู้มีสิทธิ์เลือกตั้งล่วงหน้า</h1>
-                        <p className="text-slate-500 mt-2">กรุณากรอกเลขบัตรประชาชนเพื่อตรวจสอบลำดับที่และชุดที่</p>
+                        <p className="text-slate-600 mt-2 font-medium">สำนักงานเขตหนองแขม</p>
                         
-                        {/* Database Status Indicator */}
                         <div className="flex justify-center mt-4">
                             {isDbLoaded ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-medium border border-green-200">
                                     <IconDatabase size={12} /> เชื่อมต่อฐานข้อมูลแล้ว ({database.length} รายการ)
                                 </span>
                             ) : dbError ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium border border-red-200">
                                     <IconAlertCircle size={12} /> {dbError}
                                 </span>
                             ) : (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium border border-yellow-200">
                                     กำลังโหลดข้อมูล...
                                 </span>
                             )}
                         </div>
-                        {dbError && (
-                            <p className="text-xs text-red-400 mt-2 max-w-md mx-auto">
-                                * หากเปิดไฟล์ในเครื่อง (file://) อาจเกิดปัญหานี้ กรุณาอัปโหลดขึ้น GitHub หรือ Web Server
-                            </p>
-                        )}
                     </div>
 
-                    {/* Navigation Tabs */}
+                    {/* Navigation Tabs - ปรับสีเขียว */}
                     <div className="flex justify-center mb-6 border-b border-slate-200">
                         <button 
                             onClick={() => setActiveTab('check')}
-                            className={`pb-2 px-6 font-medium transition-colors ${activeTab === 'check' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            className={`pb-2 px-6 font-medium transition-colors ${activeTab === 'check' ? 'text-green-600 border-b-2 border-green-600' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                             ตรวจสอบสิทธิ์
                         </button>
                         <button 
                             onClick={() => setActiveTab('admin')}
-                            className={`pb-2 px-6 font-medium transition-colors ${activeTab === 'admin' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            className={`pb-2 px-6 font-medium transition-colors ${activeTab === 'admin' ? 'text-green-600 border-b-2 border-green-600' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                             สำหรับผู้ดูแล
                         </button>
                     </div>
 
-                    {/* Content */}
+                    {/* Content Box */}
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px]">
                         {activeTab === 'check' ? (
                             <VoterCheck database={database} isDbLoaded={isDbLoaded} />
@@ -152,15 +149,16 @@
                         )}
                     </div>
 
-                    <footer className="mt-8 text-center text-xs text-slate-400">
-                        <p>ระบบรักษาความปลอดภัย: ข้อมูลส่วนบุคคลถูกแยกเก็บในไฟล์ data.json และเข้ารหัส (Encrypted)</p>
+                    {/* Footer - แก้ไขข้อความตามต้องการ */}
+                    <footer className="mt-8 text-center text-sm text-slate-500 font-medium">
+                        <p>สำนักงานเขตหนองแขม 2026</p>
                     </footer>
                 </div>
             );
         }
 
         // --------------------------------------------------------
-        // 1. หน้าตรวจสอบสิทธิ์ (User Facing)
+        // 1. Voter Check (User)
         // --------------------------------------------------------
         function VoterCheck({ database, isDbLoaded }) {
             const [idCard, setIdCard] = useState('');
@@ -172,48 +170,40 @@
                 e.preventDefault();
                 setResult(null);
                 setError('');
-                
-                if (!isDbLoaded) {
-                    setError('ระบบยังไม่พร้อมใช้งาน (ไม่พบข้อมูล)');
-                    return;
-                }
+                if (!isDbLoaded) { setError('ไม่พบฐานข้อมูล'); return; }
 
                 setLoading(true);
 
                 setTimeout(() => {
                     try {
                         const cleanID = idCard.replace(/[^0-9]/g, '');
-
                         if (cleanID.length !== 13) {
                             setError('กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก');
                             setLoading(false);
                             return;
                         }
 
-                        const inputHash = CryptoJS.SHA256(cleanID).toString();
-                        const found = database.find(item => item.hash_id === inputHash);
+                        const searchHash = generateSecureHash(cleanID);
+                        const found = database.find(item => item.hash_id === searchHash);
 
                         if (found) {
                             try {
-                                const bytes = CryptoJS.AES.decrypt(found.enc_name, cleanID);
+                                const bytes = CryptoJS.AES.decrypt(found.enc_name, searchHash);
                                 const originalName = bytes.toString(CryptoJS.enc.Utf8);
-
-                                if (!originalName) {
-                                    throw new Error("Decryption failed");
-                                }
+                                if (!originalName) throw new Error("Decryption failed");
                                 setResult({ ...found, decoded_name: originalName });
                             } catch (e) {
                                 setError('ข้อมูลเสียหาย ไม่สามารถแสดงชื่อได้');
                             }
                         } else {
-                            setError('ไม่พบข้อมูลผู้มีสิทธิ์ในบัญชีรายชื่อนี้ หรือ เลขบัตรไม่ถูกต้อง');
+                            setError('ไม่พบข้อมูลผู้มีสิทธิ์ หรือ เลขบัตรไม่ถูกต้อง');
                         }
                     } catch (err) {
                         setError('เกิดข้อผิดพลาดในการประมวลผล');
                         console.error(err);
                     }
                     setLoading(false);
-                }, 500);
+                }, 100);
             };
 
             return (
@@ -221,26 +211,23 @@
                     <form onSubmit={handleCheck} className="space-y-4 max-w-md mx-auto">
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-slate-700">เลขประจำตัวประชาชน (13 หลัก)</label>
-                            <div className="relative">
-                                <input 
-                                    type="text" 
-                                    value={idCard}
-                                    onChange={(e) => setIdCard(e.target.value)}
-                                    placeholder="เช่น 1-2345-67890-12-3"
-                                    maxLength="13"
-                                    className="w-full pl-4 pr-10 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-lg"
-                                />
-                                <div className="absolute right-3 top-3 text-slate-400">
-                                    <IconSearch size={20} />
-                                </div>
-                            </div>
+                            {/* ปรับสี Focus เป็นสีเขียว */}
+                            <input 
+                                type="text" 
+                                value={idCard}
+                                onChange={(e) => setIdCard(e.target.value)}
+                                placeholder="ใส่เลขบัตรฯของท่านที่นี่"
+                                maxLength="13"
+                                className="w-full pl-4 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-mono text-lg transition-all"
+                            />
                         </div>
+                        {/* ปรับปุ่มเป็นสีเขียว */}
                         <button 
                             type="submit" 
                             disabled={loading || !isDbLoaded}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors shadow-md disabled:opacity-50 flex justify-center items-center gap-2"
                         >
-                            {loading ? 'กำลังตรวจสอบ...' : 'ตรวจสอบข้อมูล'}
+                            {loading ? 'กำลังคำนวณรหัสลับ...' : 'ตรวจสอบข้อมูล'}
                         </button>
                     </form>
 
@@ -261,8 +248,8 @@
                                     <IconCheckCircle className="text-green-600" size={24} />
                                     <h3 className="text-lg font-bold text-green-800">มีรายชื่อผู้มีสิทธิ์เลือกตั้ง</h3>
                                 </div>
-                                
                                 <div className="grid md:grid-cols-2 gap-4">
+                                    {/* ปรับ Highlight เป็นสีเขียวเข้ม */}
                                     <ResultItem label="ชื่อ-นามสกุล" value={result.decoded_name} highlight />
                                     <ResultItem label="เลขบัตรประชาชน" value={`${idCard.substring(0,3)}-xxx-xxxxx-xx`} />
                                     <ResultItem label="ชุดที่" value={result.set_no} />
@@ -280,83 +267,96 @@
             return (
                 <div className={`${fullWidth ? 'col-span-full' : ''}`}>
                     <p className="text-xs text-slate-500 mb-1">{label}</p>
-                    <p className={`font-semibold text-lg ${highlight ? 'text-blue-700' : 'text-slate-800'}`}>{value}</p>
+                    <p className={`font-semibold text-lg ${highlight ? 'text-green-700' : 'text-slate-800'}`}>{value}</p>
                 </div>
             );
         }
 
         // --------------------------------------------------------
-        // 2. หน้า Admin Generator (Protected)
+        // 2. Admin Generator
         // --------------------------------------------------------
         function AdminGenerator({ onDataGenerated }) {
             const [isLocked, setIsLocked] = useState(true);
             const [passwordInput, setPasswordInput] = useState('');
             const [loginError, setLoginError] = useState('');
-
             const [csvInput, setCsvInput] = useState('');
             const [jsonOutput, setJsonOutput] = useState('');
             const [stats, setStats] = useState(null);
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [progress, setProgress] = useState(0); // เพิ่ม State สำหรับเก็บ % ความคืบหน้า
             const fileInputRef = useRef(null);
 
             const handleLogin = (e) => {
                 e.preventDefault();
-                if (passwordInput === 'BMAbangkok') {
-                    setIsLocked(false);
-                    setLoginError('');
-                } else {
-                    setLoginError('รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่');
-                }
+                if (passwordInput === 'BMAbangkok') { setIsLocked(false); setLoginError(''); } 
+                else { setLoginError('รหัสผ่านไม่ถูกต้อง'); }
             };
 
             const handleFileUpload = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
-                reader.onload = (evt) => {
-                    setCsvInput(evt.target.result);
-                };
+                reader.onload = (evt) => setCsvInput(evt.target.result);
                 reader.readAsText(file);
             };
 
-            const handleGenerate = () => {
+            const handleGenerate = async () => {
                 if (!csvInput.trim()) return;
+                setIsProcessing(true);
+                setProgress(0);
+                
+                // รอให้หน้าจออัปเดตสถานะ Processing ก่อนเริ่มงานหนัก
+                await new Promise(resolve => setTimeout(resolve, 50));
 
                 const lines = csvInput.trim().split('\n');
-                
-                const secureData = lines.map(line => {
-                    const cols = line.split(',').map(c => c.trim());
-                    if(cols.length < 5) return null;
+                const totalLines = lines.length;
+                const secureData = [];
+                const BATCH_SIZE = 20; // ทำทีละ 20 แถว เพื่อไม่ให้หน้าจอค้าง
 
-                    const idCard = cols[3];
-                    if(!idCard || idCard.length < 10) return null; 
+                for (let i = 0; i < totalLines; i += BATCH_SIZE) {
+                    const chunk = lines.slice(i, i + BATCH_SIZE);
+                    
+                    const chunkResults = chunk.map(line => {
+                        const cols = line.split(',').map(c => c.trim());
+                        if(cols.length < 5) return null;
+                        
+                        const idCard = cols[3];
+                        const fullName = cols[4];
+                        if(!idCard || idCard.length < 10) return null; 
 
-                    const setNo = cols[0];
-                    const province = cols[1];
-                    const seqNo = cols[2];
-                    const fullName = cols[4];
+                        const secureHash = generateSecureHash(idCard);
+                        const encryptedName = CryptoJS.AES.encrypt(fullName, secureHash).toString();
 
-                    const hashID = CryptoJS.SHA256(idCard).toString();
-                    const encryptedName = CryptoJS.AES.encrypt(fullName, idCard).toString();
+                        return {
+                            hash_id: secureHash,
+                            enc_name: encryptedName,
+                            set_no: cols[0],
+                            province: cols[1],
+                            seq_no: cols[2]
+                        };
+                    }).filter(x => x !== null);
 
-                    return {
-                        hash_id: hashID,
-                        enc_name: encryptedName,
-                        set_no: setNo,
-                        province: province,
-                        seq_no: seqNo
-                    };
-                }).filter(x => x !== null);
+                    secureData.push(...chunkResults);
+
+                    // อัปเดต % ความคืบหน้า
+                    const currentProgress = Math.round(Math.min(((i + BATCH_SIZE) / totalLines) * 100, 100));
+                    setProgress(currentProgress);
+
+                    // พัก 0ms เพื่อคืนการทำงานให้ Main Thread (ทำให้ UI ไม่ค้าง)
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
 
                 const outputString = JSON.stringify(secureData, null, 2);
                 setJsonOutput(outputString);
                 setStats(secureData.length);
-                onDataGenerated(secureData); // อัปเดตสถานะในหน้าเว็บทันทีเพื่อทดสอบ
+                onDataGenerated(secureData);
+                setIsProcessing(false);
             };
 
             const handleDownload = () => {
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonOutput);
                 const downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href",     dataStr);
+                downloadAnchorNode.setAttribute("href", dataStr);
                 downloadAnchorNode.setAttribute("download", "data.json");
                 document.body.appendChild(downloadAnchorNode);
                 downloadAnchorNode.click();
@@ -366,25 +366,21 @@
             if (isLocked) {
                 return (
                     <div className="flex flex-col items-center justify-center h-[400px] bg-slate-100 p-8 animate-fade-in">
-                        <div className="bg-white p-8 rounded-xl shadow-md max-w-sm w-full text-center">
+                        <div className="bg-white p-8 rounded-xl shadow-md max-w-sm w-full text-center border border-slate-200">
                             <div className="mx-auto bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mb-4">
                                 <IconLock size={32} className="text-slate-500" />
                             </div>
                             <h3 className="text-xl font-bold mb-2">ยืนยันตัวตนผู้ดูแลระบบ</h3>
-                            <p className="text-sm text-slate-500 mb-6">กรุณากรอกรหัสผ่านเพื่อเข้าถึงส่วนจัดการข้อมูล</p>
-                            
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <input 
                                     type="password" 
                                     value={passwordInput}
                                     onChange={(e) => setPasswordInput(e.target.value)}
                                     placeholder="รหัสผ่าน"
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
                                 />
                                 {loginError && <p className="text-red-500 text-xs">{loginError}</p>}
-                                <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
-                                    เข้าสู่ระบบ
-                                </button>
+                                <button type="submit" className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition">เข้าสู่ระบบ</button>
                             </form>
                         </div>
                     </div>
@@ -393,75 +389,43 @@
 
             return (
                 <div className="p-6 md:p-8 bg-slate-50 animate-fade-in">
-                    <div className="mb-6 bg-green-50 border border-green-200 p-4 rounded-lg text-sm text-green-800 flex justify-between items-center">
-                        <div className="font-bold flex items-center gap-2">
-                            <IconUnlock size={16} /> โซนผู้ดูแลระบบ (Unlocked)
-                        </div>
-                        <button onClick={() => setIsLocked(true)} className="text-xs text-green-700 underline hover:text-green-900">Lock</button>
+                    <div className="mb-6 bg-emerald-50 border border-emerald-200 p-4 rounded-lg text-sm text-emerald-800 flex justify-between items-center">
+                        <div className="font-bold flex items-center gap-2"><IconUnlock size={16} /> โซนผู้ดูแลระบบ</div>
+                        <button onClick={() => setIsLocked(true)} className="text-xs text-emerald-700 underline">Lock</button>
                     </div>
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-semibold mb-2">1. อัปโหลดไฟล์ CSV หรือวางข้อมูล</label>
-                            
+                            <label className="block text-sm font-semibold mb-2">1. นำเข้าข้อมูล CSV</label>
                             <div className="flex gap-2 mb-3">
-                                <input 
-                                    type="file" 
-                                    accept=".csv"
-                                    ref={fileInputRef}
-                                    onChange={handleFileUpload}
-                                    className="hidden" 
-                                />
-                                <button 
-                                    onClick={() => fileInputRef.current.click()}
-                                    className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-2 shadow-sm"
-                                >
+                                <input type="file" accept=".csv" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                                <button onClick={() => fileInputRef.current.click()} className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-2 shadow-sm">
                                     <IconUpload size={16} /> เลือกไฟล์ CSV
                                 </button>
-                                <span className="text-xs text-slate-400 flex items-center">
-                                    (ระบบจะอ่านข้อมูลตั้งแต่บรรทัดแรก)
-                                </span>
                             </div>
-
                             <textarea 
-                                className="w-full h-32 p-3 text-xs font-mono border rounded-lg focus:ring-2 focus:ring-blue-500"
-                                placeholder="1,กทม เขต1,001,1234567890123,นายสมชาย ใจดี..."
+                                className="w-full h-32 p-3 text-xs font-mono border rounded-lg focus:ring-2 focus:ring-green-500"
+                                placeholder="1,กทม เขต1,001,1234567890123,นายสมชาย..."
                                 value={csvInput}
                                 onChange={(e) => setCsvInput(e.target.value)}
                             ></textarea>
-                            <p className="text-xs text-slate-400 mt-1">
-                                Format: ชุดที่, จังหวัด, ลำดับ, เลขบัตร, ชื่อ (ไม่มี Header)
-                            </p>
                         </div>
 
+                        {/* ปรับปุ่ม Admin เป็นโทนสีเขียวเข้ม (Emerald/Green) */}
                         <button 
                             onClick={handleGenerate}
-                            className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 text-sm font-semibold flex items-center gap-2"
+                            disabled={isProcessing}
+                            className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
                         >
-                            <IconFileSpreadsheet size={16} /> แปลงและเข้ารหัสข้อมูล
+                            {isProcessing ? `กำลังคำนวณ ${progress}% (PBKDF2)...` : <><IconFileSpreadsheet size={16} /> แปลงและเข้ารหัส (Safe)</>}
                         </button>
 
                         {jsonOutput && (
                             <div className="animate-fade-in bg-white border rounded-lg p-4 mt-4 shadow-sm">
-                                <label className="block text-sm font-bold text-slate-700 mb-2">
-                                    2. ผลลัพธ์ (พร้อมดาวน์โหลด)
-                                    <span className="text-green-600 ml-2 font-normal">({stats} รายการ)</span>
-                                </label>
-                                
-                                <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded mb-2 border border-blue-100">
-                                    <strong>ขั้นตอนต่อไป:</strong> กดปุ่ม "ดาวน์โหลด data.json" แล้วนำไฟล์ไปวางไว้ที่เดียวกับ index.html
-                                </div>
-
+                                <label className="block text-sm font-bold text-slate-700 mb-2">2. ผลลัพธ์ (พร้อมดาวน์โหลด) <span className="text-green-600 ml-2 font-normal">({stats} รายการ)</span></label>
                                 <div className="relative">
-                                    <textarea 
-                                        readOnly
-                                        className="w-full h-48 p-3 text-xs font-mono border rounded-lg bg-slate-100 text-slate-600"
-                                        value={jsonOutput}
-                                    ></textarea>
-                                    <button 
-                                        onClick={handleDownload}
-                                        className="absolute top-2 right-2 bg-blue-600 text-white shadow-sm px-4 py-2 rounded text-xs font-bold hover:bg-blue-700 flex items-center gap-2"
-                                    >
+                                    <textarea readOnly className="w-full h-48 p-3 text-xs font-mono border rounded-lg bg-slate-100 text-slate-600" value={jsonOutput}></textarea>
+                                    <button onClick={handleDownload} className="absolute top-2 right-2 bg-green-600 text-white shadow-sm px-4 py-2 rounded text-xs font-bold hover:bg-green-700 flex items-center gap-2">
                                         <IconDownload size={14} /> ดาวน์โหลด data.json
                                     </button>
                                 </div>
