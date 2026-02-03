@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตรวจสอบรายชื่อผู้มีสิทธิออกเสียงประชามติ - เขตหนองแขม</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-xl shadow-xl overflow-hidden">
+        <div class="bg-blue-900 p-6 text-center">
+            <h1 class="text-white text-xl font-bold">ตรวจสอบสิทธิออกเสียงประชามติ</h1>
+            <p class="text-blue-200 mt-2 text-sm">เขตหนองแขม กรุงเทพมหานคร</p>
+        </div>
+
+        <div class="p-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="idCard">
+                เลขบัตรประจำตัวประชาชน 13 หลัก
+            </label>
+            <input class="shadow appearance-none border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition" 
+                   id="idCard" type="text" placeholder="ระบุเลขบัตรประชาชน" maxlength="13" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            
+            <button onclick="checkVoter()" class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline transition duration-200">
+                ตรวจสอบสิทธิ
+            </button>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="hidden flex justify-center mt-4">
+                <div class="loader"></div>
+            </div>
+
+            <!-- Result Area -->
+            <div id="result" class="hidden mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
+                <h2 class="text-green-800 font-bold text-lg mb-2">✅ พบรายชื่อผู้มีสิทธิ</h2>
+                <div class="space-y-2 text-gray-700">
+                    <p><span class="font-bold">ชื่อ-สกุล:</span> <span id="resName">-</span></p>
+                    <p><span class="font-bold">จังหวัด:</span> <span id="resProvince">-</span></p>
+                    <p><span class="font-bold">ชุดที่ (หน่วย):</span> <span id="resUnit">-</span></p>
+                    <p><span class="font-bold">ลำดับที่ในบัญชี:</span> <span id="resSeq" class="text-xl text-blue-800 font-bold">-</span></p>
+                </div>
+            </div>
+
+            <div id="notFound" class="hidden mt-6 bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                <h2 class="text-red-800 font-bold text-lg">❌ ไม่พบข้อมูล</h2>
+                <p class="text-red-600 text-sm mt-1">กรุณาตรวจสอบเลขบัตรประชาชนอีกครั้ง หรือติดต่อเจ้าหน้าที่เขตหนองแขม</p>
+            </div>
+            
+            <div id="errorMsg" class="hidden mt-6 text-red-500 text-center text-sm"></div>
+        </div>
+
+        <div class="bg-gray-100 p-4 text-center text-xs text-gray-500">
+            ระบบตรวจสอบสิทธิฯ เขตหนองแขม<br>
+            ข้อมูลปลอดภัยด้วยการเข้ารหัสขั้นสูง
+        </div>
+    </div>
+
+    <script>
+        // *** ตั้งค่า URL ที่ถูกต้องเรียบร้อยแล้ว ***
+        const WORKER_URL = "https://super-breeze-0a01.nongkheambangkok.workers.dev"; 
+
+        async function checkVoter() {
+            const idCard = document.getElementById('idCard').value;
+            const loading = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            const notFoundDiv = document.getElementById('notFound');
+            const errorMsg = document.getElementById('errorMsg');
+
+            // Reset UI
+            loading.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            notFoundDiv.classList.add('hidden');
+            errorMsg.classList.add('hidden');
+
+            if (idCard.length !== 13) {
+                loading.classList.add('hidden');
+                alert("กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก");
+                return;
+            }
+
+            try {
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_card: idCard })
+                });
+
+                const data = await response.json();
+                loading.classList.add('hidden');
+
+                if (response.ok) {
+                    if (data.found) {
+                        document.getElementById('resName').innerText = data.name;
+                        document.getElementById('resProvince').innerText = data.province;
+                        document.getElementById('resUnit').innerText = data.unit_no;
+                        document.getElementById('resSeq').innerText = data.seq_no;
+                        resultDiv.classList.remove('hidden');
+                    } else {
+                        notFoundDiv.classList.remove('hidden');
+                    }
+                } else {
+                    errorMsg.innerText = "เกิดข้อผิดพลาด: " + (data.error || "Unknown error");
+                    errorMsg.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                loading.classList.add('hidden');
+                errorMsg.innerText = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่";
+                errorMsg.classList.remove('hidden');
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
