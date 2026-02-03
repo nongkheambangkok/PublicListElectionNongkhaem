@@ -36,11 +36,9 @@
         const { useState, useEffect } = React;
         
         // ==========================================
-        // ⚙️ ส่วนตั้งค่าการเชื่อมต่อ (แก้ไขตรงนี้!)
+        // ✅ ตั้งค่า URL เรียบร้อยแล้ว
         // ==========================================
-        // ใส่ URL ของ Cloudflare Worker ที่คุณ Deploy แล้ว
-        // ห้ามลืมเปลี่ยนบรรทัดนี้ ไม่งั้นจะเชื่อมต่อไม่ได้ (แต่ไม่ควรทำให้จอขาว)
-        const API_URL = "https://CHANGE_THIS_TO_YOUR_WORKER_URL.workers.dev"; 
+        const API_URL = "https://voter-check-app.nongkheambangkok.workers.dev"; 
         // ==========================================
 
         const Security = {
@@ -100,10 +98,18 @@
                     });
 
                     if (!response.ok) {
-                        throw new Error(`การเชื่อมต่อขัดข้อง (Status: ${response.status})`);
+                        // อ่านข้อความ Error จาก Server (ถ้ามี)
+                        const errorText = await response.text();
+                        console.error("Server Error:", errorText);
+                        throw new Error(`Server ตอบกลับผิดพลาด (Status: ${response.status})`);
                     }
 
                     const json = await response.json();
+
+                    // กรณี Server ส่ง Error กลับมาเป็น JSON
+                    if (json.error) {
+                        throw new Error(json.error);
+                    }
 
                     if (json.found && json.data) {
                         // ถอดรหัสชื่อ
@@ -123,7 +129,13 @@
 
                 } catch (err) {
                     console.error("API Error:", err);
-                    setError('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์: ' + err.message);
+                    let displayError = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message;
+                    
+                    if (err.message.includes('Failed to fetch')) {
+                         displayError = `เชื่อมต่อ Server ไม่ได้ (Failed to fetch) \nกรุณาตรวจสอบ URL: ${API_URL}`;
+                    }
+                    
+                    setError(displayError);
                 } finally {
                     setLoading(false);
                 }
@@ -166,7 +178,7 @@
 
                         <div className="mt-8 flex-1">
                             {error && (
-                                <div className="animate-fade-in bg-red-50 border border-red-100 rounded-xl p-4 text-center text-red-600 text-sm font-medium">
+                                <div className="animate-fade-in bg-red-50 border border-red-100 rounded-xl p-4 text-center text-red-600 text-sm font-medium whitespace-pre-line">
                                     {error}
                                 </div>
                             )}
